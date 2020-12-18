@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	Aws = "aws"
+	Aws   = "aws"
 	Azure = "azure"
-	Gcp = "gcp"
+	Gcp   = "gcp"
 )
 
 type Parser interface {

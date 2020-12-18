@@ -2,6 +2,8 @@ build: parser-build
 
 test: parser-test
 
+fmt: parser-fmt
+
 clean: parser-clean
 
 parser-build:
@@ -11,6 +13,9 @@ parser-build:
 parser-test:
 	echo "Running tests"
 	go test github.com/aumahesh/policyparser/...
+
+parser-fmt:
+	gofmt -w .
 
 parser-clean:
 	rm -rf bin/parser
