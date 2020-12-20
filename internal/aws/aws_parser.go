@@ -1,78 +1,245 @@
 package aws
 
+import (
+	"fmt"
+	"strings"
+
+	"github.com/alecthomas/participle/v2"
+	"github.com/alecthomas/participle/v2/lexer"
+	"github.com/alecthomas/repr"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/aumahesh/policyparser/pkg/policy"
+)
+
 type AwsParser struct {
-	policyFile string
+	policyText string
 	urlEscaped bool
-	outputFile string
+	awsPolicy  *AwsPolicy
+	policies   []*policy.Policy
+	parsed     bool
+	error      error
 }
 
-func NewAwsPolicyParser(pf string, escaped bool, of string) (*AwsParser, error) {
+func NewAwsPolicyParser(policyText string, escaped bool) (*AwsParser, error) {
 	return &AwsParser{
-		policyFile: pf,
+		policyText: policyText,
 		urlEscaped: escaped,
-		outputFile: of,
+		awsPolicy:  &AwsPolicy{},
+		parsed:     false,
+		error:      nil,
 	}, nil
 }
 
-/*
-	Policy Grammar for AWS: https://docs.amazonaws.cn/en_us/IAM/latest/UserGuide/reference_policies_grammar.html
-
-policy  = {
-     <version_block?>
-     <id_block?>
-     <statement_block>
-}
-
-<version_block> = "Version" : ("2008-10-17" | "2012-10-17")
-
-<id_block> = "Id" : <policy_id_string>
-
-<statement_block> = "Statement" : [ <statement>, <statement>, ... ]
-
-<statement> = {
-    <sid_block?>,
-    <principal_block?>,
-    <effect_block>,
-    <action_block>,
-    <resource_block>,
-    <condition_block?>
-}
-
-<sid_block> = "Sid" : <sid_string>
-
-<effect_block> = "Effect" : ("Allow" | "Deny")
-
-<principal_block> = ("Principal" | "NotPrincipal") : ("*" | <principal_map>)
-
-<principal_map> = { <principal_map_entry>, <principal_map_entry>, ... }
-
-<principal_map_entry> = ("AWS" | "Federated" | "Service" | "CanonicalUser") :
-    [<principal_id_string>, <principal_id_string>, ...]
-
-<action_block> = ("AnyorList" | "NotAction") :
-    ("*" | [<action_string>, <action_string>, ...])
-
-<resource_block> = ("Resource" | "NotResource") :
-    ("*" | [<resource_string>, <resource_string>, ...])
-
-<condition_block> = "Condition" : { <condition_map> }
-<condition_map> = {
-  <condition_type_string> : { <condition_key_string> : <condition_value_list> },
-  <condition_type_string> : { <condition_key_string> : <condition_value_list> }, ...
-}
-<condition_value_list> = [<condition_value>, <condition_value>, ...]
-<condition_value> = ("string" | "number" | "Boolean")
-
-*/
-
 func (a *AwsParser) Parse() error {
-	return nil
+	parser := participle.MustBuild(a.awsPolicy,
+		participle.UseLookahead(2),
+	)
+	err := parser.ParseString("", a.policyText, a.awsPolicy, participle.AllowTrailing(true))
+	repr.Println(a.awsPolicy, repr.Hide(&lexer.Position{}))
+
+	if err == nil {
+		a.parsed = true
+		a.constructPolicy()
+	} else {
+		perr := err.(participle.UnexpectedTokenError)
+		log.Errorf("Error parsing policy: %s : %s", perr.Error(), perr.Unexpected.Pos.String())
+		a.error = err
+	}
+	return err
 }
 
-func (a *AwsParser) Write() error {
-	return nil
+func (a *AwsParser) GetPolicy() ([]*policy.Policy, error) {
+	if a.parsed {
+		return a.policies, nil
+	}
+	if a.error != nil {
+		return nil, a.error
+	}
+	return nil, fmt.Errorf("did not parse")
 }
 
-func (a *AwsParser) String() (string, error) {
-	return "", nil
+func (a *AwsParser) constructPolicy() {
+	if a.awsPolicy == nil {
+		return
+	}
+
+	a.policies = []*policy.Policy{}
+
+	id := StringValue(a.awsPolicy.Block.Id)
+	version := StringValue(a.awsPolicy.Block.Version)
+
+	for index, statement := range a.awsPolicy.Block.Statement {
+		pol := &policy.Policy{
+			Id:      fmt.Sprintf("%s:%d", id, index),
+			Version: version,
+		}
+
+		effect := StringValue(statement.Effect)
+		switch strings.ToLower(effect) {
+		case "allow":
+			pol.Allowed = true
+		default:
+			pol.Allowed = false
+		}
+
+		pol.Actions = a.getAnyOrList(statement.Action)
+		pol.NotActions = a.getAnyOrList(statement.NotAction)
+		pol.Resources = a.getAnyOrList(statement.Resource)
+		pol.NotResources = a.getAnyOrList(statement.NotResource)
+		pol.Subjects = a.getSubjects(statement.Principal)
+		pol.NotSubjects = a.getSubjects(statement.NotPrincipal)
+		pol.Condition = a.getCondition(statement.Condition)
+
+		a.policies = append(a.policies, pol)
+	}
+}
+
+func (a *AwsParser) getAnyOrList(l *AnyOrList) []string {
+	if l == nil {
+		return []string{}
+	}
+	if l.Item != nil {
+		if l.Item.Any {
+			return []string{"<.*>"}
+		}
+		if l.Item.One != nil {
+			return []string{StringValue(l.Item.One)}
+		}
+	}
+	if l.List != nil {
+		x := []string{}
+		for _, item := range l.List {
+			if item.Any {
+				x = append(x, "<.*>")
+			}
+			if item.One != nil {
+				x = append(x, StringValue(item.One))
+			}
+		}
+		return x
+	}
+	return []string{}
+}
+
+func (a *AwsParser) getSubjects(p *Principal) []string {
+	if p == nil {
+		return []string{}
+	}
+	if p.Any {
+		return []string{"<.*>"}
+	}
+	x := []string{}
+	if p.List != nil {
+		for _, item := range p.List {
+			if item.Aws != nil {
+				x = append(x, a.getAnyOrList(item.Aws)...)
+			}
+			if item.Federated != nil {
+				x = append(x, a.getAnyOrList(item.Federated)...)
+			}
+			if item.Canonical != nil {
+				x = append(x, a.getAnyOrList(item.Canonical)...)
+			}
+			if item.Service != nil {
+				x = append(x, a.getAnyOrList(item.Service)...)
+			}
+		}
+	}
+
+	return x
+}
+
+func (a *AwsParser) getCondition(c *Condition) []policy.Condition {
+	if c == nil {
+		return nil
+	}
+
+	cm := []policy.Condition{}
+
+	for _, cc := range c.ConditionMap {
+		op := StringValue(cc.Operation)
+		if op == "" {
+			continue
+		}
+		if cc.KeyValueList == nil {
+			continue
+		}
+		ck := StringValue(cc.KeyValueList.Key)
+		if ck == "" {
+			continue
+		}
+		valType := ""
+		var val interface{}
+		if cc.KeyValueList.Value == nil {
+			continue
+		}
+		if cc.KeyValueList.Value.One != nil {
+			if cc.KeyValueList.Value.One.OneString != nil {
+				x := []string{StringValue(cc.KeyValueList.Value.One.OneString)}
+				val = x
+				valType = "string"
+			}
+			if cc.KeyValueList.Value.One.OneNumber != nil {
+				x := []int64{Int64Value(cc.KeyValueList.Value.One.OneNumber)}
+				val = x
+				valType = "int64"
+			}
+			if cc.KeyValueList.Value.One.OneNumber != nil {
+				x := []bool{BoolValue(cc.KeyValueList.Value.One.OneBool)}
+				val = x
+				valType = "bool"
+			}
+		}
+		if cc.KeyValueList.Value.List != nil {
+			valType = ""
+			mixedTypes := false
+			sl := []string{}
+			il := []int64{}
+			bl := []bool{}
+			for _, v := range cc.KeyValueList.Value.List {
+				ctype := ""
+				if v.OneString != nil {
+					sl = append(sl, StringValue(v.OneString))
+					ctype = "string"
+				}
+				if v.OneNumber != nil {
+					il = append(il, Int64Value(v.OneNumber))
+					ctype = "int64"
+				}
+				if v.OneNumber != nil {
+					bl = append(bl, BoolValue(v.OneBool))
+					ctype = "bool"
+				}
+				if valType == "" {
+					valType = ctype
+				}
+				if valType != ctype {
+					mixedTypes = true
+					break
+				}
+			}
+			if mixedTypes {
+				continue
+			}
+			switch valType {
+			case "string":
+				val = sl
+			case "int64":
+				val = il
+			case "bool":
+				val = bl
+			}
+		}
+		cp := policy.Condition{
+			Operation: op,
+			Key:       ck,
+			Value:     val,
+			Type:      valType,
+		}
+
+		cm = append(cm, cp)
+	}
+
+	return cm
 }

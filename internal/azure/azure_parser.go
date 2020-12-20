@@ -1,16 +1,18 @@
 package azure
 
+import (
+	"github.com/aumahesh/policyparser/pkg/policy"
+)
+
 type AzureParser struct {
-	policyFile string
+	policyText string
 	urlEscaped bool
-	outputFile string
 }
 
-func NewAzurePolicyParser(pf string, escaped bool, of string) (*AzureParser, error) {
+func NewAzurePolicyParser(policyText string, escaped bool) (*AzureParser, error) {
 	return &AzureParser{
-		policyFile: pf,
+		policyText: policyText,
 		urlEscaped: escaped,
-		outputFile: of,
 	}, nil
 }
 
@@ -18,10 +20,6 @@ func (a *AzureParser) Parse() error {
 	return nil
 }
 
-func (a *AzureParser) Write() error {
-	return nil
-}
-
-func (a *AzureParser) String() (string, error) {
-	return "", nil
+func (a *AzureParser) GetPolicy() ([]*policy.Policy, error) {
+	return nil, nil
 }

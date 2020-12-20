@@ -6,6 +6,7 @@ import (
 	"github.com/aumahesh/policyparser/internal/aws"
 	"github.com/aumahesh/policyparser/internal/azure"
 	"github.com/aumahesh/policyparser/internal/gcp"
+	"github.com/aumahesh/policyparser/pkg/policy"
 )
 
 const (
@@ -16,18 +17,17 @@ const (
 
 type Parser interface {
 	Parse() error
-	Write() error
-	String() (string, error)
+	GetPolicy() ([]*policy.Policy, error)
 }
 
-func NewParser(p, pf string, escaped bool, of string) (Parser, error) {
+func NewParser(p, policyText string, escaped bool) (Parser, error) {
 	switch p {
 	case Aws:
-		return aws.NewAwsPolicyParser(pf, escaped, of)
+		return aws.NewAwsPolicyParser(policyText, escaped)
 	case Azure:
-		return azure.NewAzurePolicyParser(pf, escaped, of)
+		return azure.NewAzurePolicyParser(policyText, escaped)
 	case Gcp:
-		return gcp.NewGcpPolicyParser(pf, escaped, of)
+		return gcp.NewGcpPolicyParser(policyText, escaped)
 	}
 	return nil, fmt.Errorf("%s is not a supported cloud provider", p)
 }
