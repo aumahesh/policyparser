@@ -2,6 +2,7 @@ package aws
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/alecthomas/participle/v2"
@@ -14,7 +15,6 @@ import (
 
 type AwsParser struct {
 	policyText string
-	urlEscaped bool
 	awsPolicy  *AwsPolicy
 	policies   []*policy.Policy
 	parsed     bool
@@ -22,9 +22,17 @@ type AwsParser struct {
 }
 
 func NewAwsPolicyParser(policyText string, escaped bool) (*AwsParser, error) {
+	var err error
+	pt := policyText
+	if escaped {
+		pt, err = url.QueryUnescape(policyText)
+		if err != nil {
+				return nil, err
+			}
+	}
+	log.Debugf("/n%s", pt)
 	return &AwsParser{
-		policyText: policyText,
-		urlEscaped: escaped,
+		policyText: pt,
 		awsPolicy:  &AwsPolicy{},
 		parsed:     false,
 		error:      nil,
@@ -75,21 +83,40 @@ func (a *AwsParser) constructPolicy() {
 			Version: version,
 		}
 
-		effect := StringValue(statement.Effect)
-		switch strings.ToLower(effect) {
-		case "allow":
-			pol.Allowed = true
-		default:
-			pol.Allowed = false
+		for _, element := range statement.Elements {
+			if element.Effect != nil {
+				effect := StringValue(element.Effect)
+				switch strings.ToLower(effect) {
+				case "allow":
+					pol.Allowed = true
+				default:
+					pol.Allowed = false
+				}
+			}
+			if element.Action != nil {
+				pol.Actions = a.getAnyOrList(element.Action)
+			}
+			if element.NotAction != nil {
+				pol.NotActions = a.getAnyOrList(element.NotAction)
+			}
+			if element.Resource != nil {
+				pol.Resources = a.getAnyOrList(element.Resource)
+			}
+			if element.NotResource != nil {
+				pol.NotResources = a.getAnyOrList(element.NotResource)
+			}
+			if element.Principal != nil {
+				pol.Subjects = a.getSubjects(element.Principal)
+			}
+			if element.NotPrincipal != nil {
+				pol.NotSubjects = a.getSubjects(element.NotPrincipal)
+			}
+			if element.Condition != nil {
+				pol.Condition = a.getCondition(element.Condition)
+			}
 		}
 
-		pol.Actions = a.getAnyOrList(statement.Action)
-		pol.NotActions = a.getAnyOrList(statement.NotAction)
-		pol.Resources = a.getAnyOrList(statement.Resource)
-		pol.NotResources = a.getAnyOrList(statement.NotResource)
-		pol.Subjects = a.getSubjects(statement.Principal)
-		pol.NotSubjects = a.getSubjects(statement.NotPrincipal)
-		pol.Condition = a.getCondition(statement.Condition)
+
 
 		a.policies = append(a.policies, pol)
 	}
