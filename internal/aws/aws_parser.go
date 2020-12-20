@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/alecthomas/participle/v2"
-	"github.com/alecthomas/participle/v2/lexer"
-	"github.com/alecthomas/repr"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/aumahesh/policyparser/pkg/policy"
@@ -30,7 +28,7 @@ func NewAwsPolicyParser(policyText string, escaped bool) (*AwsParser, error) {
 			return nil, err
 		}
 	}
-	log.Debugf("/n%s", pt)
+	// log.Debugf("/n%s", pt)
 	return &AwsParser{
 		policyText: pt,
 		awsPolicy:  &AwsPolicy{},
@@ -44,7 +42,7 @@ func (a *AwsParser) Parse() error {
 		participle.UseLookahead(2),
 	)
 	err := parser.ParseString("", a.policyText, a.awsPolicy, participle.AllowTrailing(true))
-	repr.Println(a.awsPolicy, repr.Hide(&lexer.Position{}))
+	// repr.Println(a.awsPolicy, repr.Hide(&lexer.Position{}))
 
 	if err == nil {
 		a.parsed = true
