@@ -122,10 +122,10 @@ type PrincipalList struct {
 type Condition struct {
 	Pos lexer.Position
 
-	ConditionMap []*ConditionMap `"{" @@ ( ( (",") @@ )* )? "}"`
+	ConditionList []*ConditionList `"{" @@ ( ( (",") @@ )* )? "}"`
 }
 
-type ConditionMap struct {
+type ConditionList struct {
 	Pos lexer.Position
 
 	Operation    *string       `@String ":"`
@@ -151,5 +151,6 @@ type Value struct {
 
 	OneString *string `@String`
 	OneNumber *int64  `| @Int`
-	OneBool   *bool   `| (@"true" | "false")`
+	BoolTrue  *bool   `| @"true"`
+	BoolFalse *bool   `| @"false"`
 }

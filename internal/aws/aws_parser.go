@@ -182,7 +182,7 @@ func (a *AwsParser) getCondition(c *Condition) []policy.Condition {
 
 	cm := []policy.Condition{}
 
-	for _, cc := range c.ConditionMap {
+	for _, cc := range c.ConditionList {
 		op := StringValue(cc.Operation)
 		if op == "" {
 			continue
@@ -210,8 +210,13 @@ func (a *AwsParser) getCondition(c *Condition) []policy.Condition {
 				val = x
 				valType = "int64"
 			}
-			if cc.KeyValueList.Value.One.OneNumber != nil {
-				x := []bool{BoolValue(cc.KeyValueList.Value.One.OneBool)}
+			if cc.KeyValueList.Value.One.BoolTrue != nil {
+				x := []bool{true}
+				val = x
+				valType = "bool"
+			}
+			if cc.KeyValueList.Value.One.BoolFalse != nil {
+				x := []bool{false}
 				val = x
 				valType = "bool"
 			}
@@ -232,8 +237,12 @@ func (a *AwsParser) getCondition(c *Condition) []policy.Condition {
 					il = append(il, Int64Value(v.OneNumber))
 					ctype = "int64"
 				}
-				if v.OneNumber != nil {
-					bl = append(bl, BoolValue(v.OneBool))
+				if v.BoolTrue != nil {
+					bl = append(bl, true)
+					ctype = "bool"
+				}
+				if v.BoolFalse != nil {
+					bl = append(bl, false)
 					ctype = "bool"
 				}
 				if valType == "" {

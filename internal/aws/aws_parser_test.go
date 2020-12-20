@@ -403,3 +403,65 @@ func TestAwsParser_Parse7(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestAwsParser_Parse8(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	policyText := `{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": "iam:CreateUser",
+      "Resource": "*",
+      "Condition": {
+          "True": {
+			"mfaAuthenticated": [false, true]
+          }
+      }
+    }
+  ]
+}`
+	a, err := NewAwsPolicyParser(policyText, false)
+	assert.Nil(t, err)
+	if err != nil {
+		t.FailNow()
+	}
+
+	err = a.Parse()
+	assert.Nil(t, err)
+
+	policies, err := a.GetPolicy()
+	assert.Nil(t, err)
+
+	for index, pol := range policies {
+		log.Infof("pol #%d: %+v", index, pol)
+	}
+
+	assert.Len(t, policies, 1)
+	if len(policies) != 1 {
+		t.FailNow()
+	}
+	assert.False(t, policies[0].Allowed)
+	assert.Len(t, policies[0].Subjects, 0)
+	assert.Len(t, policies[0].NotSubjects, 0)
+	assert.Len(t, policies[0].NotActions, 0)
+	assert.Len(t, policies[0].NotResources, 0)
+	assert.Len(t, policies[0].Actions, 1)
+	assert.EqualValues(t, "iam:CreateUser", policies[0].Actions[0])
+	assert.Len(t, policies[0].Resources, 1)
+	assert.EqualValues(t, "<.*>", policies[0].Resources[0])
+
+	assert.Len(t, policies[0].Condition, 1)
+	if len(policies[0].Condition) != 1 {
+		t.FailNow()
+	}
+
+	assert.EqualValues(t, "True", policies[0].Condition[0].Operation)
+	assert.EqualValues(t, "mfaAuthenticated", policies[0].Condition[0].Key)
+	assert.Len(t, policies[0].Condition[0].Value, 2)
+	assert.EqualValues(t, "bool", policies[0].Condition[0].Type)
+	vs := policies[0].Condition[0].Value.([]bool)
+	assert.EqualValues(t, false, vs[0])
+	assert.EqualValues(t, true, vs[1])
+}
