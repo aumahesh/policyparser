@@ -72,15 +72,21 @@ type Block struct {
 type Statement struct {
 	Pos lexer.Position
 
-	Sid          *string    `( "\"Sid\"" ":" @String (",")? )?`
-	Effect       *string    `"\"Effect\"" ":" @String (",")?`
-	Principal    *Principal `( "\"Principal\"" ":" @@ (",")? )?`
-	NotPrincipal *Principal `( "\"NotPrincipal\"" ":" @@ (",")? )?`
-	Action       *AnyOrList `"\"Action\"" ":" @@ (",")?`
-	NotAction    *AnyOrList `( "\"NotAction\"" ":" @@ (",")? )?`
-	Resource     *AnyOrList `( "\"Resource\"" ":" @@ (",")? )?`
-	NotResource  *AnyOrList `( "\"NotResource\"" ":" @@ (",")? )?`
-	Condition    *Condition `( "\"Condition\"" ":" @@ (",")? )?`
+	Elements []*Elements `@@ ( ("," @@)* )?`
+}
+
+type Elements struct {
+	Pos lexer.Position
+
+	Sid          *string    `"\"Sid\"" ":" @String`
+	Effect       *string    `| "\"Effect\"" ":" @String`
+	Principal    *Principal `| "\"Principal\"" ":" @@`
+	NotPrincipal *Principal `| "\"NotPrincipal\"" ":" @@`
+	Action       *AnyOrList `| "\"Action\"" ":" @@`
+	NotAction    *AnyOrList `| "\"NotAction\"" ":" @@`
+	Resource     *AnyOrList `| "\"Resource\"" ":" @@`
+	NotResource  *AnyOrList `| "\"NotResource\"" ":" @@`
+	Condition    *Condition `| "\"Condition\"" ":" @@`
 }
 
 type AnyOrList struct {
