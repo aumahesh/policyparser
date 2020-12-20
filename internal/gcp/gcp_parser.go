@@ -1,16 +1,18 @@
 package gcp
 
+import (
+	"github.com/aumahesh/policyparser/pkg/policy"
+)
+
 type GcpParser struct {
-	policyFile string
+	policyText string
 	urlEscaped bool
-	outputFile string
 }
 
-func NewGcpPolicyParser(pf string, escaped bool, of string) (*GcpParser, error) {
+func NewGcpPolicyParser(policyText string, escaped bool) (*GcpParser, error) {
 	return &GcpParser{
-		policyFile: pf,
+		policyText: policyText,
 		urlEscaped: escaped,
-		outputFile: of,
 	}, nil
 }
 
@@ -18,10 +20,6 @@ func (a *GcpParser) Parse() error {
 	return nil
 }
 
-func (a *GcpParser) Write() error {
-	return nil
-}
-
-func (a *GcpParser) String() (string, error) {
-	return "", nil
+func (a *GcpParser) GetPolicy() ([]*policy.Policy, error) {
+	return nil, nil
 }

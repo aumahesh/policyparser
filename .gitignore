@@ -1,7 +1,5 @@
 bin/*
-config.yaml
-test.json
-test2.json
-out.json
+*.yaml
+*.json
 aws_escaped.txt
 go.sum
