@@ -2,6 +2,7 @@ package aws
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/alecthomas/participle/v2"
@@ -14,7 +15,6 @@ import (
 
 type AwsParser struct {
 	policyText string
-	urlEscaped bool
 	awsPolicy  *AwsPolicy
 	policies   []*policy.Policy
 	parsed     bool
@@ -22,9 +22,17 @@ type AwsParser struct {
 }
 
 func NewAwsPolicyParser(policyText string, escaped bool) (*AwsParser, error) {
+	var err error
+	pt := policyText
+	if escaped {
+		pt, err = url.QueryUnescape(policyText)
+		if err != nil {
+				return nil, err
+			}
+	}
+	log.Debugf("/n%s", pt)
 	return &AwsParser{
-		policyText: policyText,
-		urlEscaped: escaped,
+		policyText: pt,
 		awsPolicy:  &AwsPolicy{},
 		parsed:     false,
 		error:      nil,
