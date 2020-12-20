@@ -129,7 +129,8 @@ func (a *AwsParser) getAnyOrList(l *AnyOrList) []string {
 			return []string{"<.*>"}
 		}
 		if l.Item.One != nil {
-			return []string{StringValue(l.Item.One)}
+			vs := StringValue(l.Item.One)
+			return []string{strings.ReplaceAll(vs, "*", "<.*>")}
 		}
 	}
 	if l.List != nil {
