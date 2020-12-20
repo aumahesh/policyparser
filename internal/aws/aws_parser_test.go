@@ -174,7 +174,7 @@ func TestAwsParser_Parse3(t *testing.T) {
 	assert.EqualValues(t, "iam:UpdateRoleDescription", policies[0].Actions[4])
 	assert.EqualValues(t, "iam:UpdateAssumeRolePolicy", policies[0].Actions[5])
 	assert.Len(t, policies[0].Resources, 1)
-	assert.EqualValues(t, "arn:aws:iam::*:role/aws-reserved/sso.amazonaws.com/*", policies[0].Resources[0])
+	assert.EqualValues(t, "arn:aws:iam::<.*>:role/aws-reserved/sso.amazonaws.com/<.*>", policies[0].Resources[0])
 
 	assert.Len(t, policies[0].Condition, 1)
 	if len(policies[0].Condition) != 1 {
@@ -269,44 +269,44 @@ func TestAwsParser_Parse5(t *testing.T) {
 
 	encodedText := `%7B%0A%20%20%20%20%22Version%22%3A%20%222012-10-17%22%2C%0A%20%20%20%20%22Statement%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Effect%22%3A%20%22Allow%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Action%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22ec2%3ADescribeSpotFleetRequests%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22ec2%3AModifySpotFleetRequest%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Resource%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2A%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Effect%22%3A%20%22Allow%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Action%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22cloudwatch%3ADescribeAlarms%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22cloudwatch%3APutMetricAlarm%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22cloudwatch%3ADeleteAlarms%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Resource%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2A%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%20%0A%20%20%20%20%20%20%20%20%20%20%22Effect%22%3A%20%22Allow%22%2C%20%0A%20%20%20%20%20%20%20%20%20%20%22Action%22%3A%20%22iam%3ACreateServiceLinkedRole%22%2C%20%0A%20%20%20%20%20%20%20%20%20%20%22Resource%22%3A%20%22arn%3Aaws%3Aiam%3A%3A%2A%3Arole%2Faws-service-role%2Fec2.application-autoscaling.amazonaws.com%2FAWSServiceRoleForApplicationAutoScaling_EC2SpotFleetRequest%22%2C%20%0A%20%20%20%20%20%20%20%20%20%20%22Condition%22%3A%20%7B%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%22StringLike%22%3A%20%7B%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22iam%3AAWSServiceName%22%3A%20%22ec2.application-autoscaling.amazonaws.com%22%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%20%0A%20%20%20%20%5D%0A%7D`
 	/*
-		url decoded policy:
-	{
-	    "Version": "2012-10-17",
-	    "Statement": [
-	        {
-	            "Effect": "Allow",
-	            "Action": [
-	                "ec2:DescribeSpotFleetRequests",
-	                "ec2:ModifySpotFleetRequest"
-	            ],
-	            "Resource": [
-	                "*"
-	            ]
-	        },
-	        {
-	            "Effect": "Allow",
-	            "Action": [
-	                "cloudwatch:DescribeAlarms",
-	                "cloudwatch:PutMetricAlarm",
-	                "cloudwatch:DeleteAlarms"
-	            ],
-	            "Resource": [
-	                "*"
-	            ]
-	        },
-	        {
-	          "Effect": "Allow",
-	          "Action": "iam:CreateServiceLinkedRole",
-	          "Resource": "arn:aws:iam::*:role/aws-service-role/ec2.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_EC2SpotFleetRequest",
-	          "Condition": {
-	            "StringLike": {
-	              "iam:AWSServiceName": "ec2.application-autoscaling.amazonaws.com"
-	            }
-	          }
-	        }
-	    ]
-	}
-	 */
+			url decoded policy:
+		{
+		    "Version": "2012-10-17",
+		    "Statement": [
+		        {
+		            "Effect": "Allow",
+		            "Action": [
+		                "ec2:DescribeSpotFleetRequests",
+		                "ec2:ModifySpotFleetRequest"
+		            ],
+		            "Resource": [
+		                "*"
+		            ]
+		        },
+		        {
+		            "Effect": "Allow",
+		            "Action": [
+		                "cloudwatch:DescribeAlarms",
+		                "cloudwatch:PutMetricAlarm",
+		                "cloudwatch:DeleteAlarms"
+		            ],
+		            "Resource": [
+		                "*"
+		            ]
+		        },
+		        {
+		          "Effect": "Allow",
+		          "Action": "iam:CreateServiceLinkedRole",
+		          "Resource": "arn:aws:iam::*:role/aws-service-role/ec2.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_EC2SpotFleetRequest",
+		          "Condition": {
+		            "StringLike": {
+		              "iam:AWSServiceName": "ec2.application-autoscaling.amazonaws.com"
+		            }
+		          }
+		        }
+		    ]
+		}
+	*/
 
 	a, err := NewAwsPolicyParser(encodedText, true)
 	assert.Nil(t, err)
@@ -329,9 +329,9 @@ func TestAwsParser_Parse5(t *testing.T) {
 		t.FailNow()
 	}
 
-	actions := []int{2,3,1}
-	resources := []int{1,1,1}
-	conditions := []int{0,0,1}
+	actions := []int{2, 3, 1}
+	resources := []int{1, 1, 1}
+	conditions := []int{0, 0, 1}
 
 	for index, p := range policies {
 		assert.Len(t, p.Actions, actions[index])
@@ -339,7 +339,6 @@ func TestAwsParser_Parse5(t *testing.T) {
 		assert.Len(t, p.Condition, conditions[index])
 	}
 }
-
 
 func TestAwsParser_Parse6(t *testing.T) {
 	encodedText := `%7B%0A%20%20%20%20%22Version%22%3A%20%222012-10-17%22%2C%0A%20%20%20%20%22Statement%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Effect%22%3A%20%22Allow%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Action%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22ec2%3ADescribeSpotFleetRequests%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22ec2%3AModifySpotFleetRequest%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Resource%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2A%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Effect%22%3A%20%22Allow%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Action%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22cloudwatch%3ADescribeAlarms%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22cloudwatch%3APutMetricAlarm%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22cloudwatch%3ADeleteAlarms%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22Resource%22%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2A%22%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7B%20%0A%20%20%20%20%20%20%20%20%20%20%22Action%22%3A%20%22iam%3ACreateServiceLinkedRole%22%2C%20%0A%20%20%20%20%20%20%20%20%20%20%22Effect%22%3A%20%22Allow%22%2C%20%0A%20%20%20%20%20%20%20%20%20%20%22Resource%22%3A%20%22arn%3Aaws%3Aiam%3A%3A%2A%3Arole%2Faws-service-role%2Fec2.application-autoscaling.amazonaws.com%2FAWSServiceRoleForApplicationAutoScaling_EC2SpotFleetRequest%22%2C%20%0A%20%20%20%20%20%20%20%20%20%20%22Condition%22%3A%20%7B%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%22StringLike%22%3A%20%7B%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22iam%3AAWSServiceName%22%3A%20%22ec2.application-autoscaling.amazonaws.com%22%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%20%0A%20%20%20%20%5D%0A%7D`
@@ -365,9 +364,9 @@ func TestAwsParser_Parse6(t *testing.T) {
 		t.FailNow()
 	}
 
-	actions := []int{2,3,1}
-	resources := []int{1,1,1}
-	conditions := []int{0,0,1}
+	actions := []int{2, 3, 1}
+	resources := []int{1, 1, 1}
+	conditions := []int{0, 0, 1}
 
 	for index, p := range policies {
 		assert.Len(t, p.Actions, actions[index])
