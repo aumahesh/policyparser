@@ -27,8 +27,8 @@ func NewAwsPolicyParser(policyText string, escaped bool) (*AwsParser, error) {
 	if escaped {
 		pt, err = url.QueryUnescape(policyText)
 		if err != nil {
-				return nil, err
-			}
+			return nil, err
+		}
 	}
 	log.Debugf("/n%s", pt)
 	return &AwsParser{
@@ -116,8 +116,6 @@ func (a *AwsParser) constructPolicy() {
 			}
 		}
 
-
-
 		a.policies = append(a.policies, pol)
 	}
 }
@@ -141,7 +139,8 @@ func (a *AwsParser) getAnyOrList(l *AnyOrList) []string {
 				x = append(x, "<.*>")
 			}
 			if item.One != nil {
-				x = append(x, StringValue(item.One))
+				vs := StringValue(item.One)
+				x = append(x, strings.ReplaceAll(vs, "*", "<.*>"))
 			}
 		}
 		return x
