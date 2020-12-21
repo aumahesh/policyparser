@@ -23,3 +23,11 @@ func (a *AzureParser) Parse() error {
 func (a *AzureParser) GetPolicy() ([]*policy.Policy, error) {
 	return nil, nil
 }
+
+func (a *AzureParser) Json() ([]byte, error) {
+	return nil, nil
+}
+
+func (a *AzureParser) WriteJson(filename string) error {
+	return nil
+}

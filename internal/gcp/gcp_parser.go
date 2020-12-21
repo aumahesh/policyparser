@@ -23,3 +23,11 @@ func (a *GcpParser) Parse() error {
 func (a *GcpParser) GetPolicy() ([]*policy.Policy, error) {
 	return nil, nil
 }
+
+func (a *GcpParser) Json() ([]byte, error) {
+	return nil, nil
+}
+
+func (a *GcpParser) WriteJson(filename string) error {
+	return nil
+}
