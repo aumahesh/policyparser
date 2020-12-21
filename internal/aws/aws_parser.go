@@ -1,8 +1,10 @@
 package aws
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/alecthomas/participle/v2"
@@ -63,6 +65,30 @@ func (a *AwsParser) GetPolicy() ([]*policy.Policy, error) {
 		return nil, a.error
 	}
 	return nil, fmt.Errorf("did not parse")
+}
+
+func (a *AwsParser) Json() ([]byte, error) {
+	if a.parsed && a.policies != nil {
+		return json.Marshal(a.policies)
+	}
+	return nil, fmt.Errorf("no policies parsed yet")
+}
+
+func (a *AwsParser) WriteJson(filename string) error {
+	if a.parsed && a.policies != nil {
+		if _, err := os.Stat(filename); err == nil {
+			return fmt.Errorf("File exists: %s", filename)
+		}
+		f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0666)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		enc := json.NewEncoder(f)
+		enc.SetEscapeHTML(false)
+		return enc.Encode(a.policies)
+	}
+	return fmt.Errorf("no policies parsed yet")
 }
 
 func (a *AwsParser) constructPolicy() {

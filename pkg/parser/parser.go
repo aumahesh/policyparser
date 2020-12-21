@@ -18,6 +18,8 @@ const (
 type Parser interface {
 	Parse() error
 	GetPolicy() ([]*policy.Policy, error)
+	Json() ([]byte, error)
+	WriteJson(string) error
 }
 
 func NewParser(p, policyText string, escaped bool) (Parser, error) {

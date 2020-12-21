@@ -19,6 +19,7 @@ func main() {
 	viper.SetDefault("cloud", "aws")
 	viper.SetDefault("policyFile", "awspolicy.json")
 	viper.SetDefault("urlEscaped", true)
+	viper.SetDefault("outputFile", "parsed.json")
 
 	viper.SetConfigName("config") // name of config file (without extension)
 	viper.SetConfigType("yaml")   // REQUIRED if the config file does not have the extension in the name
@@ -68,4 +69,16 @@ func main() {
 	for index, pol := range policies {
 		log.Infof("pol #%d: %+v", index, pol)
 	}
+
+	j, err := p.Json()
+	if err != nil {
+		panic(fmt.Errorf("Error marshaling to json: %s", err.Error()))
+	}
+	log.Debugf("Json: \n%s", string(j))
+	err = p.WriteJson(viper.GetString("outputFile"))
+	if err != nil {
+		panic(fmt.Errorf("Error writing json to file: %s", err.Error()))
+	}
+
+	log.Debugf("Written to file: %s", viper.GetString("outputFile"))
 }
